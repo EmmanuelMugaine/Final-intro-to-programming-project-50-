@@ -1,0 +1,21 @@
+Accounts and Transaction relationship plan.
+
+Accounts holds the transaction history and budget information
+
+Account table:
+Account ID -> Unique identifier
+Account name -> User name
+Net cashflow -> Income this month & Expenses this month (Calculated from transactions)
+Income -> Positive transaction history (Calculated from transactions)
+Expenses -> Negative transaction history (Calculated from transactions)
+Budget -> Remaining monthly Budget (Calculated from transactions)
+
+Transaction table:
+Date-> When the transaction happened
+Company Name -> Who you received money from / sent money to
+Amount -> Money received/sent
+Category -> For budgeting
+Description -> Transaction description (optional)
+
+Budget table:
+List of categories a user can select and enter the amount
