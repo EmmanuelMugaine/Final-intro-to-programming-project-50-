@@ -10,12 +10,33 @@ Income -> Positive transaction history (Calculated from transactions)
 Expenses -> Negative transaction history (Calculated from transactions)
 Budget -> Remaining monthly Budget (Calculated from transactions)
 
+Account table Example:
+Account ID: 00001
+Account name: Emmanuel Mugaine
+
+
 Transaction table:
+Account ID -> Referencing which account the transaction belongs to
 Date-> When the transaction happened
 Company Name -> Who you received money from / sent money to
 Amount -> Money received/sent
 Category -> For budgeting
 Description -> Transaction description (optional)
 
+Transaction table example:
+Account ID -> 00001
+date: 13-07-2026
+amount: -25.50 (negative indicates expense)
+category: Groceries (Budget category)
+notes: weekly shop (Optional Description of the transaction)
+
 Budget table:
+Account ID -> Referencing which account the transaction belongs to
+Monthly Budget -> User sets how much they want to spend each month
 List of categories a user can select and enter the amount
+
+
+Budget table Example:
+Account ID: 00001
+Monthly Budget: £1000
+Categories: Groceries -> £300, Dining -> £200, Transport -> £150, Bills -> £300, Other -> £50
