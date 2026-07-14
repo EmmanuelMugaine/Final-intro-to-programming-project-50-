@@ -1,1 +1,4 @@
-Matplotlib
+matplotlib
+tkinter
+datetime
+csv

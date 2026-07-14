@@ -17,7 +17,7 @@ Account name: Emmanuel Mugaine
 
 Transaction table:
 Account ID -> Referencing which account the transaction belongs to
-Date-> When the transaction happened
+Date-> When the transaction happened (Uses the datetime library)
 Company Name -> Who you received money from / sent money to
 Amount -> Money received/sent
 Category -> For budgeting
