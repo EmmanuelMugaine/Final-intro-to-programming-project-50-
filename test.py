@@ -1,0 +1,2 @@
+accounts = {"Account ID" : "00001", "Account Name" : "Emmanuel Mugaine"}
+transactions = {"Account ID" : "00001", "Date" : "26-07-2026", "Amount" : -26.70, "Company name": "Aldi", "Category" : "Groceries"}

@@ -27,6 +27,7 @@ Transaction table example:
 Account ID -> 00001
 date: 13-07-2026
 amount: -25.50 (negative indicates expense)
+Company: Asda
 category: Groceries (Budget category)
 notes: weekly shop (Optional Description of the transaction)
 
