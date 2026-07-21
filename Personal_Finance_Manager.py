@@ -120,3 +120,14 @@ def binary_search(sorted_data, target, key):
             high = mid - 1  # Target is in the left half
 
     return None  # Not found
+
+#Because the transaction by date is sorted earlier it is safe to search now
+#Target date to find in the data set
+target_date = datetime.strptime("2026-06-15", "%Y-%m-%d").date()
+#Inputting target date into function
+result = binary_search(transactions_by_date, target_date, key=lambda t: t["Date"])
+#Displaying results/status
+if result:
+    print(f"Found transaction: {result}")
+else:
+    print("No transaction found on that date.")
