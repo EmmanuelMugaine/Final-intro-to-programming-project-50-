@@ -97,3 +97,26 @@ transactions_by_amount = merge_sort(transactions_list, key=lambda t: t["Amount"]
 
 # Sort budgets by Category
 budgets_by_category = merge_sort(budgets_list, key=lambda b: b["Category"])
+
+#--------- Binary Search (generic, searches by any key) -----------
+#Currently only displays one transaction per day if searched
+def binary_search(sorted_data, target, key):
+    #Searches a list that has ALREADY been sorted by 'key' for an
+    #item whose key value equals the 'target'.
+    
+    #Returns the matching item, or None if not found.
+    low = 0
+    high = len(sorted_data) - 1
+
+    while low <= high:
+        mid = (low + high) // 2
+        mid_value = key(sorted_data[mid])
+
+        if mid_value == target:
+            return sorted_data[mid]  # Found it
+        elif mid_value < target:
+            low = mid + 1  # Target is in the right half
+        else:
+            high = mid - 1  # Target is in the left half
+
+    return None  # Not found
