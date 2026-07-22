@@ -204,3 +204,47 @@ def track_budgets(transactions, budgets):    #Returns a list of dictionaries sum
             })
 
     return budget_status
+
+from calendar import monthrange
+
+#--------- Rule-based Forecasting -----------
+def forecast_budgets(budget_status, today=None):
+    #Takes the output of track_budgets() and adds a linear projection
+    #for the CURRENT month only (past months already have real totals).
+
+    if today is None:
+        today = date.today()
+
+    current_month_str = today.strftime("%Y-%m")
+    days_elapsed = today.day  # e.g. if today is the 15th, 15 days have elapsed
+
+    forecast_results = []
+
+    for entry in budget_status:
+        # Copy the existing entry so we don't mutate the original
+        forecast_entry = dict(entry)
+
+        if entry["Month"] == current_month_str:
+            year, month = map(int, entry["Month"].split("-"))
+            days_in_month = monthrange(year, month)[1]
+
+            spent_so_far = entry["Spent"]
+            daily_rate = spent_so_far / days_elapsed if days_elapsed > 0 else 0
+            projected_total = daily_rate * days_in_month
+
+            forecast_entry["Projected Total"] = round(projected_total, 2)
+            forecast_entry["Projected Over Budget"] = projected_total > entry["Budgeted"]
+            forecast_entry["Projected Overspend"] = round(
+                max(0, projected_total - entry["Budgeted"]), 2
+            )
+        else:
+            # Past months: no projection needed, actuals are final
+            forecast_entry["Projected Total"] = entry["Spent"]
+            forecast_entry["Projected Over Budget"] = entry["Over Budget"]
+            forecast_entry["Projected Overspend"] = round(
+                max(0, entry["Spent"] - entry["Budgeted"]), 2
+            )
+
+        forecast_results.append(forecast_entry)
+
+    return forecast_results
