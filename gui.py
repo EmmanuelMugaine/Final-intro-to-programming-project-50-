@@ -66,6 +66,38 @@ class LedgerWiseApp:
         # and builds the real tabbed interface in its place.
         self.welcome_frame.destroy()
 
+        # EVERY account's data as loaded from CSV.
+        # Keep that untouched as the "all accounts" master copy
+
+        #Accounts can be changed from the drop down box
+        self.all_transactions_list = self.transactions_list
+        self.all_budgets_list = self.budgets_list
+
+        # --- Account selector bar, always visible above the tabs ---
+        self.account_name_to_id = {a["Account Name"]: a["Account ID"] for a in self.accounts_list}
+        account_names = [a["Account Name"] for a in self.accounts_list]
+
+        account_bar = ttk.Frame(self.root)
+        account_bar.pack(fill="x", padx=10, pady=(10, 0))
+
+        ttk.Label(account_bar, text="Account:", font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 8))
+
+        self.account_var = tk.StringVar(value=account_names[0] if account_names else "")
+        account_dropdown = ttk.Combobox(
+            account_bar,
+            textvariable=self.account_var,
+            values=account_names,
+            state="readonly",
+            width=25
+        )
+        account_dropdown.pack(side="left")
+        account_dropdown.bind("<<ComboboxSelected>>", self.on_account_changed)
+
+        # Filter down to whichever account is selected by default (the first
+        # one) before any tab is built, so every tab opens already scoped
+        # to that account.
+        self.filter_data_for_selected_account()
+
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
 
@@ -78,6 +110,33 @@ class LedgerWiseApp:
         self.notebook.add(self.transactions_tab, text="Transactions")
         self.notebook.add(self.budgets_tab, text="Budgets")
         self.notebook.add(self.reports_tab, text="Reports")
+
+        self.build_dashboard_tab()
+        self.build_transactions_tab()
+        self.build_budgets_tab()
+        self.build_reports_tab()
+
+    def filter_data_for_selected_account(self):
+        # Filters the master (all-accounts) transaction/budget lists down
+        # to just the account currently selected in the dropdown, and
+        # stores the result in self.transactions_list
+        
+        selected_name = self.account_var.get()
+        account_id = self.account_name_to_id.get(selected_name)
+        self.current_account_id = account_id
+
+        self.transactions_list = [
+            t for t in self.all_transactions_list if t["Account ID"] == account_id
+        ]
+        self.budgets_list = [
+            b for b in self.all_budgets_list if b["Account ID"] == account_id
+        ]
+
+    def on_account_changed(self, event=None):
+        # Called when a different account is chosen in the dropdown.
+        # Re-filters the data and rebuilds every tab from scratch so the
+        # whole app reflects the newly selected account.
+        self.filter_data_for_selected_account()
 
         self.build_dashboard_tab()
         self.build_transactions_tab()
@@ -141,6 +200,11 @@ class LedgerWiseApp:
         # Builds the Dashboard tab: a dropdown to pick a month, then that
         # month's income, expenses, net cashflow, and a warning list of
         # categories at risk of (or already) going over budget.
+
+        # Clear any widgets from a previous build (this method is re-run
+        # whenever the selected account changes)
+        for widget in self.dashboard_tab.winfo_children():
+            widget.destroy()
 
         # --- Work out which months actually have transaction data ---
         months_with_data = sorted(
@@ -259,6 +323,11 @@ class LedgerWiseApp:
         # with column-header sorting (merge sort) and two search boxes —
         # an exact date lookup (binary search) and a free-text search
         # across Company Name / Description (linear search).
+
+        # Clear any widgets from a previous build (this method is re-run
+        # whenever the selected account changes)
+        for widget in self.transactions_tab.winfo_children():
+            widget.destroy()
 
         # --- Search controls row ---
         controls_frame = ttk.Frame(self.transactions_tab)
@@ -390,6 +459,11 @@ class LedgerWiseApp:
         # Builds the Budgets tab: a dropdown to pick a month, and one
         # progress bar per category showing amount spent vs budget.
 
+        # Clear any widgets from a previous build (this method is re-run
+        # whenever the selected account changes)
+        for widget in self.budgets_tab.winfo_children():
+            widget.destroy()
+
         # --- Work out which months have budget data, most recent first ---
         # Uses track_budgets() so this only lists months that actually
         # have spending recorded against a budgeted category.
@@ -488,6 +562,11 @@ class LedgerWiseApp:
         Builds the Reports tab: a pie chart of spending by category,
         with a dropdown to pick which month to view.
         """
+        # Clear any widgets from a previous build (this method is re-run
+        # whenever the selected account changes)
+        for widget in self.reports_tab.winfo_children():
+            widget.destroy()
+
         # --- Work out which months actually have data, most recent first ---
         months_with_data = sorted(
             {t["Date"].strftime("%Y-%m") for t in self.transactions_list},
