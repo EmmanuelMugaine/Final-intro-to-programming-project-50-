@@ -160,6 +160,21 @@ def load_all_data(accounts_file, budgets_file, transactions_file):
 
     return accounts_list, budgets_list, transactions_list
 
+#  Linear Search (generic, partial text match)
+
+def linear_search(data, search_text, key):
+    # Searches ANY list (sorted or not) for items whose key value
+    # contains 'search_text' as a substring (case-insensitive).
+
+    search_text_lower = search_text.lower()
+    results = []
+
+    for item in data:  # Checks every item in turn — O(n), no sorting required
+        if search_text_lower in key(item).lower():
+            results.append(item)
+
+    return results
+
 
 #--------- Merge Sort (generic, sorts by any key) -----------
 def merge_sort(data, key):     #'key' is a function that extracts the value to compare
