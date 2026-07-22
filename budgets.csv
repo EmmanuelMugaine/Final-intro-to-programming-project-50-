@@ -4,3 +4,13 @@ Account ID,Category,Budget Amount
 00001,Transport,150
 00001,Bills,300
 00001,Other,50
+00002,Groceries,220
+00002,Dining,180
+00002,Transport,120
+00002,Bills,220
+00002,Other,80
+00003,Groceries,260
+00003,Dining,120
+00003,Transport,90
+00003,Bills,180
+00003,Other,60
