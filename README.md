@@ -69,6 +69,5 @@ A short splash screen introduces the application before the main window opens. A
 
 *https://github.com/EmmanuelMugaine/IY499-Final-intro-to-programming-project.git*
 
-## Referencing
-
-Any code adapted from an external source (e.g. official Python or matplotlib documentation, Stack Overflow) is marked with an inline comment at the point of use, giving a brief description and a link to the original source, per the module's referencing requirements.
+## Refrences
+Matthes, E. (2015) Python crash course: a hands-on, project-based introduction to programming [PDF]. San Francisco: No Starch Press. Available at: https://indiachinainstitute.org/wp-content/uploads/2018/05/Python-Crash-Course.pdf (Accessed: 22 July 2026).
