@@ -99,7 +99,7 @@ transactions_by_amount = merge_sort(transactions_list, key=lambda t: t["Amount"]
 budgets_by_category = merge_sort(budgets_list, key=lambda b: b["Category"])
 
 #--------- Binary Search (generic, searches by any key) -----------
-#Currently only displays one transaction per day if searched
+#Displays all transactions if sorted by date
 def binary_search(sorted_data, target, key):
     #Searches a list that has ALREADY been sorted by 'key' for an
     #item whose key value equals the 'target'.
@@ -107,27 +107,50 @@ def binary_search(sorted_data, target, key):
     #Returns the matching item, or None if not found.
     low = 0
     high = len(sorted_data) - 1
+    found_index = None
 
+    # Step 1: standard binary search to find ONE matching index
     while low <= high:
         mid = (low + high) // 2
         mid_value = key(sorted_data[mid])
 
         if mid_value == target:
-            return sorted_data[mid]  # Found it
+            found_index = mid
+            break
         elif mid_value < target:
-            low = mid + 1  # Target is in the right half
+            low = mid + 1
         else:
-            high = mid - 1  # Target is in the left half
+            high = mid - 1
 
-    return None  # Not found
+    if found_index is None:
+        return []  # No matches at all
+
+    # Step 2: scan outward from found_index to collect every match
+    results = [sorted_data[found_index]]
+
+    # Scan left
+    i = found_index - 1
+    while i >= 0 and key(sorted_data[i]) == target:
+        results.append(sorted_data[i])
+        i -= 1
+
+    # Scan right
+    j = found_index + 1
+    while j < len(sorted_data) and key(sorted_data[j]) == target:
+        results.append(sorted_data[j])
+        j += 1
+
+    return results
 
 #Because the transaction by date is sorted earlier it is safe to search now
 #Target date to find in the data set
 target_date = datetime.strptime("2026-06-15", "%Y-%m-%d").date()
 #Inputting target date into function
-result = binary_search(transactions_by_date, target_date, key=lambda t: t["Date"])
-#Displaying results/status
-if result:
-    print(f"Found transaction: {result}")
+same_day_transactions = binary_search(transactions_by_date, target_date, key=lambda t: t["Date"])
+
+if same_day_transactions:
+    print(f"Found {len(same_day_transactions)} transaction(s) on {target_date}:")
+    for t in same_day_transactions:
+        print(f"  {t['Company Name']} - £{t['Amount']} ({t['Category']})")
 else:
-    print("No transaction found on that date.")
+    print("No transactions found on that date.")
