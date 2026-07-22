@@ -1,13 +1,11 @@
-"""
-gui.py
+#--------- gui.py ----------
 
-The Tkinter GUI for LedgerWise. Contains only widget/display logic —
-all data loading and calculations are imported from ledgerwise.py so
-this file stays focused on presentation.
-"""
+# The Tkinter GUI for LedgerWise. Contains only widget/display logic —
+# all data loading and calculations are imported from ledgerwise.py so
+# this file stays focused on presentation.
 
-import tkinter as tk
-from tkinter import ttk
+import tkinter as tk    #Import for the window
+from tkinter import ttk #Import for the dashboard and tabs
 from datetime import date
 
 from matplotlib.figure import Figure
@@ -26,6 +24,8 @@ from Personal_Finance_Manager import (
 class LedgerWiseApp:
     # Main application window for LedgerWise.
     # Holds the notebook (tabbed interface) and creates each tab's frame.
+
+    #Initialising the Window name and dimensions
     def __init__(self, root, accounts_list, budgets_list, transactions_list):
         self.root = root
         self.root.title("LedgerWise")
@@ -36,6 +36,8 @@ class LedgerWiseApp:
         self.budgets_list = budgets_list
         self.transactions_list = transactions_list
 
+        self.configure_styles()
+
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
 
@@ -43,7 +45,7 @@ class LedgerWiseApp:
         self.transactions_tab = ttk.Frame(self.notebook)
         self.budgets_tab = ttk.Frame(self.notebook)
         self.reports_tab = ttk.Frame(self.notebook)
-
+    #Conifguring Navigation tabs
         self.notebook.add(self.dashboard_tab, text="Dashboard")
         self.notebook.add(self.transactions_tab, text="Transactions")
         self.notebook.add(self.budgets_tab, text="Budgets")
@@ -54,17 +56,119 @@ class LedgerWiseApp:
         self.build_budgets_tab()
         self.build_reports_tab()
 
-    def build_dashboard_tab(self):
-        # Builds the Dashboard tab: this month's income, expenses, net
-        # cashflow, and a warning list of categories at risk of going
-        # over budget.
-        current_month = date.today().strftime("%Y-%m")
+    def configure_styles(self):  # Defines LedgerWise's visual theme a light background with green accents
 
-        # --- Calculate this month's totals from transactions_list ---
+        # --- Palette ---
+        bg_colour = "#f7f9f7"          # near-white, faint green tint
+        panel_colour = "#ffffff"       # pure white for content panels
+        accent_colour = "#2e7d32"      # deep green — buttons, headings, selected tab
+        accent_light = "#e6f4ea"       # pale green — selected tab background, highlights
+        text_colour = "#1b1b1b"        # near-black for readability
+        muted_text = "#5f6b5f"         # grey-green for secondary text (status labels)
+        border_colour = "#c8d6c8"
+
+        self.root.configure(background=bg_colour)
+
+        style = ttk.Style()
+        # 'clam' is required for background/foreground options on ttk widgets
+        # to actually take effect on most platforms (the default theme
+        # ignores many colour options).
+        style.theme_use("clam")
+
+        # --- General widgets ---
+        style.configure("TFrame", background=bg_colour)
+        style.configure("TLabel", background=bg_colour, foreground=text_colour, font=("Segoe UI", 10))
+        style.configure("TButton", background=accent_colour, foreground="white",
+                        font=("Segoe UI", 10, "bold"), padding=6, borderwidth=0)
+        style.map("TButton", background=[("active", "#276229")])
+
+        style.configure("TEntry", fieldbackground=panel_colour, foreground=text_colour,
+                        bordercolor=border_colour)
+        style.configure("TCombobox", fieldbackground=panel_colour, foreground=text_colour,
+                        bordercolor=border_colour)
+
+        # --- Notebook (tab bar) ---
+        style.configure("TNotebook", background=bg_colour, borderwidth=0)
+        style.configure("TNotebook.Tab", background=bg_colour, foreground=muted_text,
+                        font=("Segoe UI", 11), padding=(16, 8))
+        style.map("TNotebook.Tab",
+                background=[("selected", accent_light)],
+                foreground=[("selected", accent_colour)])
+
+        # --- Treeview (Transactions table) ---
+        style.configure("Treeview", background=panel_colour, fieldbackground=panel_colour,
+                        foreground=text_colour, font=("Segoe UI", 10), rowheight=24,
+                        bordercolor=border_colour, borderwidth=1)
+        style.configure("Treeview.Heading", background=accent_light, foreground=accent_colour,
+                        font=("Segoe UI", 10, "bold"))
+        style.map("Treeview", background=[("selected", accent_light)],
+                foreground=[("selected", text_colour)])
+
+        # --- Default progress bar style (Budgets tab overrides colour per-category,
+        # but this sets the base trough look) ---
+        style.configure("Horizontal.TProgressbar", troughcolor="#e0e0e0",
+                        background=accent_colour, borderwidth=0)
+
+    def build_dashboard_tab(self):
+        # Builds the Dashboard tab: a dropdown to pick a month, then that
+        # month's income, expenses, net cashflow, and a warning list of
+        # categories at risk of (or already) going over budget.
+
+        # --- Work out which months actually have transaction data ---
+        months_with_data = sorted(
+            {t["Date"].strftime("%Y-%m") for t in self.transactions_list},
+            reverse=True
+        )
+
+        if not months_with_data:
+            ttk.Label(self.dashboard_tab, text="No transaction data available.",
+                    font=("Arial", 14)).pack(pady=20)
+            return
+
+        # --- Controls row: label + dropdown (same pattern as other tabs) ---
+        controls_frame = ttk.Frame(self.dashboard_tab)
+        controls_frame.pack(pady=(20, 10))
+
+        ttk.Label(controls_frame, text="Month:", font=("Arial", 11)).pack(side="left", padx=(0, 8))
+
+        # Default to the current real-world month if it has data, otherwise
+        # the most recent month available — avoids landing on an empty dashboard
+        # just because "today" falls outside the sample data's date range.
+        current_month = date.today().strftime("%Y-%m")
+        default_month = current_month if current_month in months_with_data else months_with_data[0]
+
+        self.dashboard_selected_month = tk.StringVar(value=default_month)
+        month_dropdown = ttk.Combobox(
+            controls_frame,
+            textvariable=self.dashboard_selected_month,
+            values=months_with_data,
+            state="readonly",
+            width=10
+        )
+        month_dropdown.pack(side="left")
+        month_dropdown.bind("<<ComboboxSelected>>", lambda event: self.draw_dashboard_summary())
+
+        # --- Frame that holds the summary content, rebuilt on each redraw ---
+        self.dashboard_content_frame = ttk.Frame(self.dashboard_tab)
+        self.dashboard_content_frame.pack(fill="both", expand=True)
+
+        self.draw_dashboard_summary()
+
+    def draw_dashboard_summary(self):
+        # Draws (or redraws) the income/expenses/cashflow summary and
+        # budget warnings for whichever month is currently selected.
+
+        # Clear any previously drawn content before redrawing
+        for widget in self.dashboard_content_frame.winfo_children():
+            widget.destroy()
+
+        selected_month = self.dashboard_selected_month.get()
+
+        # --- Calculate the selected month's totals from transactions_list ---
         income = 0.0
         expenses = 0.0
         for t in self.transactions_list:
-            if t["Date"].strftime("%Y-%m") == current_month:
+            if t["Date"].strftime("%Y-%m") == selected_month:
                 if t["Amount"] > 0:
                     income += t["Amount"]
                 else:
@@ -73,10 +177,11 @@ class LedgerWiseApp:
         net_cashflow = income - expenses
 
         # --- Summary labels ---
-        title = ttk.Label(self.dashboard_tab, text=f"Dashboard — {current_month}", font=("Arial", 16, "bold"))
-        title.pack(pady=(20, 10))
+        title = ttk.Label(self.dashboard_content_frame, text=f"Dashboard — {selected_month}",
+                        font=("Arial", 16, "bold"))
+        title.pack(pady=(10, 10))
 
-        summary_frame = ttk.Frame(self.dashboard_tab)
+        summary_frame = ttk.Frame(self.dashboard_content_frame)
         summary_frame.pack(pady=10)
 
         ttk.Label(summary_frame, text=f"Income: £{income:.2f}", font=("Arial", 12)).grid(row=0, column=0, padx=20)
@@ -87,29 +192,42 @@ class LedgerWiseApp:
                 foreground=cashflow_colour).grid(row=0, column=2, padx=20)
 
         # --- Budget warnings using existing tracking/forecasting logic ---
+        # Note: forecast_budgets() only PROJECTS for the real current month;
+        # for any other month it just reports the actual final Spent total,
+        # so selecting a past month here correctly shows real figures rather
+        # than an extrapolated (and misleading) projection.
         status = track_budgets(self.transactions_list, self.budgets_list)
         forecast = forecast_budgets(status)
 
-        warnings_label = ttk.Label(self.dashboard_tab, text="Budget Watch", font=("Arial", 13, "bold"))
+        warnings_label = ttk.Label(self.dashboard_content_frame, text="Budget Watch", font=("Arial", 13, "bold"))
         warnings_label.pack(pady=(20, 5))
 
-        current_month_forecasts = [
+        selected_month_forecasts = [
             f for f in forecast
-            if f["Month"] == current_month and f["Projected Over Budget"]
+            if f["Month"] == selected_month and f["Projected Over Budget"]
         ]
 
-        if current_month_forecasts:
-            for f in current_month_forecasts:
-                warning_text = (
-                    f" {f['Category']}: on track to be £{f['Projected Overspend']:.2f} "
-                    f"over budget by month-end"
-                )
-                ttk.Label(self.dashboard_tab, text=warning_text, foreground="red").pack(anchor="w", padx=40)
+        if selected_month_forecasts:
+            for f in selected_month_forecasts:
+                # Phrased differently depending on whether this is the real
+                # current month (a projection) or a finished past month (a fact)
+                if selected_month == date.today().strftime("%Y-%m"):
+                    warning_text = (
+                        f" {f['Category']}: on track to be £{f['Projected Overspend']:.2f} "
+                        f"over budget by month-end"
+                    )
+                else:   #For a past month
+                    warning_text = (
+                        f" {f['Category']}: finished £{f['Projected Overspend']:.2f} over budget"
+                    )
+                ttk.Label(self.dashboard_content_frame, text=warning_text,
+                        foreground="red").pack(anchor="w", padx=40)
         else:
-            ttk.Label(self.dashboard_tab, text="No categories currently at risk.", foreground="green").pack(padx=40)
+            ttk.Label(self.dashboard_content_frame, text="No categories currently at risk.",
+                    foreground="green").pack(padx=40)
 
-    def build_transactions_tab(self):
-        # Builds the Transactions tab: a Treeview table of all transactions,
+    def build_transactions_tab(self): # Builds the Transactions tab
+
         # with column-header sorting (merge sort) and two search boxes —
         # an exact date lookup (binary search) and a free-text search
         # across Company Name / Description (linear search).
@@ -166,10 +284,8 @@ class LedgerWiseApp:
         self.reset_transaction_table()
 
     def populate_transaction_table(self, transactions):
-        """
-        Clears the Treeview and refills it with the given list of
-        transaction dictionaries, in the order given.
-        """
+        # Clears the Treeview and refills it with the given list of
+        # transaction dictionaries, in the order given.
         self.transactions_tree.delete(*self.transactions_tree.get_children())
 
         for t in transactions:
@@ -184,11 +300,9 @@ class LedgerWiseApp:
         self.transactions_status_var.set(f"Showing {len(transactions)} transaction(s)")
 
     def sort_transaction_table(self, column):
-        """
-        Sorts the currently displayed transactions by the clicked
-        column, using the custom merge_sort algorithm, and redraws
-        the table.
-        """
+        # Sorts the currently displayed transactions by the clicked
+        # column, using the custom merge_sort algorithm, and redraws
+        # the table.
         key_functions = {
             "Date": lambda t: t["Date"],
             "Amount": lambda t: t["Amount"],
@@ -197,13 +311,9 @@ class LedgerWiseApp:
         self.transactions_list = sorted_transactions  # keep sort order for future searches too
         self.populate_transaction_table(sorted_transactions)
 
-    def search_by_date(self):
-        """
-        Looks up an exact date using binary search. Requires the data
-        to be sorted by Date first, so we sort immediately before
-        searching (cheap for this dataset size, and guarantees
-        correctness regardless of whatever order the table was in).
-        """
+    def search_by_date(self): # Looks up an exact date using binary search.
+        # Requires the data to be sorted by Date first, so we sort immediately before searching
+
         date_text = self.date_search_var.get().strip()
         try:
             target_date = date.fromisoformat(date_text)
@@ -214,18 +324,16 @@ class LedgerWiseApp:
             return
 
         sorted_by_date = merge_sort(self.transactions_list, key=lambda t: t["Date"])
-        matches = binary_search_all(sorted_by_date, target_date, key=lambda t: t["Date"])
+        matches = binary_search(sorted_by_date, target_date, key=lambda t: t["Date"])
 
         self.populate_transaction_table(matches)
         if not matches:
             self.transactions_status_var.set(f"No transactions found on {target_date}.")
 
-    def search_by_text(self):
-        """
-        Searches Company Name and Description for the given text
-        using linear search (no sorting required — text fields
-        aren't suited to exact-match binary search).
-        """
+    def search_by_text(self): # Searches Company Name and Description for the given text
+
+        # uses linear search (no sorting required)
+
         search_text = self.text_search_var.get().strip()
         if not search_text:
             self.reset_transaction_table()
@@ -242,7 +350,8 @@ class LedgerWiseApp:
             self.transactions_status_var.set(f"No transactions matching '{search_text}'.")
 
     def reset_transaction_table(self):
-        """Clears search boxes and shows every transaction, sorted by Date."""
+        #Clears search boxes and shows every transaction, sorted by Date.
+
         self.date_search_var.set("")
         self.text_search_var.set("")
         sorted_transactions = merge_sort(self.transactions_list, key=lambda t: t["Date"])
@@ -250,10 +359,9 @@ class LedgerWiseApp:
         self.populate_transaction_table(sorted_transactions)
 
     def build_budgets_tab(self):
-        """
-        Builds the Budgets tab: a dropdown to pick a month, and one
-        progress bar per category showing amount spent vs budget.
-        """
+        # Builds the Budgets tab: a dropdown to pick a month, and one
+        # progress bar per category showing amount spent vs budget.
+
         # --- Work out which months have budget data, most recent first ---
         # Uses track_budgets() so this only lists months that actually
         # have spending recorded against a budgeted category.
@@ -262,7 +370,7 @@ class LedgerWiseApp:
 
         if not months_with_data:
             ttk.Label(self.budgets_tab, text="No budget data available.",
-                      font=("Arial", 14)).pack(pady=20)
+                    font=("Arial", 14)).pack(pady=20)
             return
 
         # --- Controls row: label + dropdown (same pattern as Reports tab) ---
@@ -309,7 +417,7 @@ class LedgerWiseApp:
 
         if not month_entries:
             ttk.Label(self.budget_bars_frame, text=f"No budgeted spending recorded for {selected_month}.",
-                      font=("Arial", 12)).pack(pady=20)
+                    font=("Arial", 12)).pack(pady=20)
             return
 
         for entry in month_entries:
@@ -338,7 +446,7 @@ class LedgerWiseApp:
             style_name = f"{entry['Category']}.Horizontal.TProgressbar"
 
             style = ttk.Style()
-            bar_colour = "red" if entry["Over Budget"] else "green"
+            bar_colour = "#c62828" if entry["Over Budget"] else "#2e7d32"  # matches theme's red/green
             style.configure(style_name, troughcolor="#e0e0e0", background=bar_colour)
 
             progress_bar = ttk.Progressbar(
@@ -348,9 +456,10 @@ class LedgerWiseApp:
             progress_bar.pack(fill="x", pady=(2, 0))
 
     def build_reports_tab(self):
-        # Builds the Reports tab: a pie chart of spending by category,
-        # with a dropdown to pick which month to view.
-
+        """
+        Builds the Reports tab: a pie chart of spending by category,
+        with a dropdown to pick which month to view.
+        """
         # --- Work out which months actually have data, most recent first ---
         months_with_data = sorted(
             {t["Date"].strftime("%Y-%m") for t in self.transactions_list},
@@ -392,6 +501,7 @@ class LedgerWiseApp:
         # Draws (or redraws) a pie chart of spending by category for
         # whichever month is currently selected in the dropdown.
         # Clear out any previously drawn chart before drawing a new one
+
         for widget in self.chart_frame.winfo_children():
             widget.destroy()
 
@@ -435,7 +545,7 @@ def main():
 
     root = tk.Tk()
     app = LedgerWiseApp(root, accounts_list, budgets_list, transactions_list)
-    root.mainloop()
+    root.mainloop() #Closing the window
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ class DataLoadError(Exception):
     # Custom exception for problems loading App data files.
     pass
 
-#Loading CSV data with Error Handling
+#-------- Loading CSV data with Error Handling -----------
 
 def load_accounts(filename):
 
@@ -18,12 +18,12 @@ def load_accounts(filename):
     #has the wrong columns, or contains a malformed row.
 
     expected_columns = {"Account ID", "Account Name"}
-    loaded_accounts = []
-
+    loaded_accounts = []    #Empty list to append later
+    #Using a try block to handle problematic code
     try:
-        with open(filename, "r", newline="") as accounts:
+        with open(filename, "r", newline="") as accounts:   #Opening chosen file
             account_reader = csv.DictReader(accounts)
-
+            #Formatting table
             actual_columns = set(account_reader.fieldnames or [])
             if actual_columns != expected_columns:
                 missing = expected_columns - actual_columns
@@ -49,7 +49,7 @@ def load_accounts(filename):
                         f"'{filename}', row {row_number}: invalid data ({e}). "
                         f"Row contents: {row}"
                     )
-
+#Displaying Error to user
     except FileNotFoundError:
         raise DataLoadError(f"Could not find file '{filename}'. Check the file path and try again.")
 
@@ -100,12 +100,11 @@ def load_budget(filename):
 
     return loaded_budgets
 
-def load_transactions(filename):
-    """
-    Loads transactions from a CSV file into a list of dictionaries.
-    Raises DataLoadError with a clear message if the file is missing,
-    has the wrong columns, or contains a malformed row.
-    """
+def load_transactions(filename):  #Loads transactions from a CSV file into a list of dictionaries.
+
+    #Raises DataLoadError with a clear message if the file is missing,
+    #has the wrong columns, or contains a malformed row.
+
     expected_columns = {"Account ID", "Date", "Company Name", "Amount", "Category", "Description"}
     loaded_transactions = []
 
@@ -139,7 +138,7 @@ def load_transactions(filename):
                         f"'{filename}', row {row_number}: invalid data ({e}). "
                         f"Row contents: {row}"
                     )
-
+#Displaying error and potential fix to the user
     except FileNotFoundError:
         raise DataLoadError(f"Could not find file '{filename}'. Check the file path and try again.")
 
@@ -356,16 +355,14 @@ def forecast_budgets(budget_status, today=None):
     return forecast_results
 
 class DataLoadError(Exception):
-    """Custom exception for problems loading LedgerWise data files."""
+    #Custom exception for problems loading LedgerWise data files.
     pass
 
 
-def load_transactions(filename):
-    """
-    Loads transactions from a CSV file into a list of dictionaries.
-    Raises DataLoadError with a clear message if the file is missing,
-    has the wrong columns, or contains a malformed row.
-    """
+def load_transactions(filename):  # Loads transactions from a CSV file into a list of dictionaries.
+    # Raises DataLoadError with a clear message if the file is missing,
+    # has the wrong columns, or contains a malformed row.
+
     expected_columns = {"Account ID", "Date", "Company Name", "Amount", "Category", "Description"}
     loaded_transactions = []
 
@@ -405,12 +402,10 @@ def load_transactions(filename):
 
     return loaded_transactions
 
-def load_accounts(filename):
-    """
-    Loads accounts from a CSV file into a list of dictionaries.
-    Raises DataLoadError with a clear message if the file is missing,
-    has the wrong columns, or contains a malformed row.
-    """
+def load_accounts(filename):  # Loads accounts from a CSV file into a list of dictionaries.
+    # Raises DataLoadError with a clear message if the file is missing,
+    # has the wrong columns, or contains a malformed row.
+
     expected_columns = {"Account ID", "Account Name"}
     loaded_accounts = []
 
@@ -450,12 +445,9 @@ def load_accounts(filename):
     return loaded_accounts
 
 
-def load_budget(filename):
-    """
-    Loads budgets from a CSV file into a list of dictionaries.
-    Raises DataLoadError with a clear message if the file is missing,
-    has the wrong columns, or contains a malformed row.
-    """
+def load_budget(filename): # Loads budgets from a CSV file into a list of dictionaries.
+    # Raises DataLoadError with a clear message if the file is missing,
+    # has the wrong columns, or contains a malformed row.
     expected_columns = {"Account ID", "Category", "Budget Amount"}
     loaded_budgets = []
 
@@ -500,33 +492,6 @@ def main():
     accounts_list, budgets_list, transactions_list = load_all_data(
         "accounts.csv", "budgets.csv", "transactions.csv"
     )
-
-    # Sort transactions by Date
-    transactions_by_date = merge_sort(transactions_list, key=lambda t: t["Date"])
-
-    # Sort transactions by Amount
-    transactions_by_amount = merge_sort(transactions_list, key=lambda t: t["Amount"])
-
-    # Sort budgets by Category
-    budgets_by_category = merge_sort(budgets_list, key=lambda b: b["Category"])
-
-    # Because transactions_by_date is sorted, it is safe to binary search now
-    target_date = datetime.strptime("2026-06-15", "%Y-%m-%d").date()
-    same_day_transactions = binary_search(transactions_by_date, target_date, key=lambda t: t["Date"])
-
-    if same_day_transactions:
-        print(f"Found {len(same_day_transactions)} transaction(s) on {target_date}:")
-        for t in same_day_transactions:
-            print(f"  {t['Company Name']} - £{t['Amount']} ({t['Category']})")
-    else:
-        print("No transactions found on that date.")
-
-    status = track_budgets(transactions_list, budgets_list)
-    forecast = forecast_budgets(status)
-    for entry in forecast:
-        if entry["Projected Over Budget"]:
-            print(f" {entry['Category']} ({entry['Month']}): projected £{entry['Projected Total']} "
-                f"vs budget £{entry['Budgeted']}")
 
 if __name__ == "__main__":
     main()
